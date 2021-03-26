@@ -1788,6 +1788,7 @@ export interface OutputTargetDistTypes extends OutputTargetBase {
 
   dir: string;
   typesDir: string;
+  keepCoreRefs?: boolean;
 }
 
 export interface OutputTargetDistLazy extends OutputTargetBase {
@@ -1902,6 +1903,7 @@ export interface OutputTargetDistCustomElementsBundle extends OutputTargetBaseNe
   inlineDynamicImports?: boolean;
   includeGlobalScripts?: boolean;
   minify?: boolean;
+  typesDir: string;
 }
 
 export interface OutputTargetBase {
