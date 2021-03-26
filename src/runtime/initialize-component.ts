@@ -12,7 +12,7 @@ import { createTime, uniqueTime } from './profile';
 export const initializeComponent = async (elm: d.HostElement, hostRef: d.HostRef, cmpMeta: d.ComponentRuntimeMeta, hmrVersionId?: string, Cstr?: any) => {
   // initializeComponent
   if ((BUILD.lazyLoad || BUILD.hydrateServerSide || BUILD.style) && (hostRef.$flags$ & HOST_FLAGS.hasInitializedComponent) === 0) {
-    if (BUILD.lazyLoad || BUILD.hydrateClientSide) {
+    if (!cmpMeta.$customElement$ && (BUILD.lazyLoad || BUILD.hydrateClientSide)) {
       // we haven't initialized this element yet
       hostRef.$flags$ |= HOST_FLAGS.hasInitializedComponent;
 
