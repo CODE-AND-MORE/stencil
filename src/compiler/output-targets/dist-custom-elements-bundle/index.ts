@@ -45,6 +45,7 @@ const bundleCustomElements = async (
       conditionals: getCustomElementsBuildConditionals(config, buildCtx.components),
       customTransformers: getCustomElementBundleCustomTransformer(config, compilerCtx),
       externalRuntime: !!outputTarget.externalRuntime,
+      external: outputTarget.external,
       inlineWorkers: true,
       inputs: {
         index: '\0core',
@@ -111,6 +112,13 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
     const exportName = dashToPascalCase(cmp.tagName);
     const importName = cmp.componentClassName;
     const importAs = `$Cmp${exportName}`;
+
+    if (outputTarget.external) {
+      const cmpModule = buildCtx.compilerCtx.moduleMap.get(cmp.sourceFilePath);
+      if (outputTarget.external.includes(cmpModule.collectionName)) {
+        return;
+      }
+    }
 
     if (cmp.isPlain) {
       exp.push(`export { ${importName} as ${exportName} } from '${cmp.sourceFilePath}';`);

@@ -85,6 +85,7 @@ export const getRollupOptions = (
   const afterPlugins = config.rollupPlugins.after || [];
   const rollupOptions: RollupOptions = {
     input: bundleOpts.inputs,
+    external: bundleOpts.external,
 
     plugins: [
       coreResolvePlugin(config, compilerCtx, bundleOpts.platform, bundleOpts.externalRuntime),
