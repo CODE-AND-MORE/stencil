@@ -1899,7 +1899,7 @@ export interface OutputTargetDistCustomElementsBundle extends OutputTargetBaseNe
   type: 'dist-custom-elements-bundle';
   empty?: boolean;
   externalRuntime?: boolean;
-  external?: string[];
+  external?: (string | RegExp)[];
   copy?: CopyTask[];
   inlineDynamicImports?: boolean;
   includeGlobalScripts?: boolean;

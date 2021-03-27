@@ -10,7 +10,7 @@ export interface BundleOptions {
   /**
    * External modules (will be passed to rollup).
    */
-  external?: string[];
+  external?: (string | RegExp)[];
   
   platform: 'client' | 'hydrate' | 'worker';
   customTransformers?: TransformerFactory<SourceFile>[];

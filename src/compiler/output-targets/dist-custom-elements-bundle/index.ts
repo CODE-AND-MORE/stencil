@@ -115,7 +115,7 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
 
     if (outputTarget.external) {
       const cmpModule = buildCtx.compilerCtx.moduleMap.get(cmp.sourceFilePath);
-      if (outputTarget.external.includes(cmpModule.collectionName)) {
+      if (outputTarget.external.find(ext => typeof ext === "string" ? ext === cmpModule.collectionName : cmpModule.collectionName.match(ext))) {
         return;
       }
     }
