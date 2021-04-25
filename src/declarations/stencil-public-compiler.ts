@@ -99,6 +99,12 @@ export interface StencilConfig {
   srcDir?: string;
 
   /**
+   * The srcDirs config specifies other directories, that may contain source files. It should be used
+   * only when tsconfig "include" prop has multiple source dirs.
+   */
+  srcDirs?: string[];
+
+  /**
    * Passes custom configuration down to the "@rollup/plugin-commonjs" that Stencil uses under the hood.
    * For further information: https://stenciljs.com/docs/module-bundling
    */
