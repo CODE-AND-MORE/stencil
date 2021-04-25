@@ -67,15 +67,10 @@ export const createWatchBuild = async (config: d.Config, compilerCtx: d.Compiler
   };
 
   const start = async () => {
-    await watchSrcDirectory(config.srcDir, compilerCtx);
-    await watchRootFiles(config, compilerCtx);
-
-    if (config.srcDirs) {
-      for (const dir of config.srcDirs) {
-        await watchSrcDirectory(dir, compilerCtx);
-      }
-    }
-
+    const srcRead = watchSrcDirectory(config, compilerCtx);
+    const otherRead = watchRootFiles(config, compilerCtx);
+    await srcRead;
+    await otherRead;
     tsWatchProgram = await createTsWatchProgram(config, onBuild);
     return watchWaiter;
   };
@@ -158,8 +153,8 @@ export const createWatchBuild = async (config: d.Config, compilerCtx: d.Compiler
   };
 };
 
-const watchSrcDirectory = async (dir: string, compilerCtx: d.CompilerCtx) => {
-  const srcFiles = await compilerCtx.fs.readdir(dir, {
+const watchSrcDirectory = async (config: d.Config, compilerCtx: d.CompilerCtx) => {
+  const srcFiles = await compilerCtx.fs.readdir(config.srcDir, {
     recursive: true,
     excludeDirNames: ['.cache', '.git', '.github', '.stencil', '.vscode', 'node_modules'],
     excludeExtensions: [
@@ -177,7 +172,7 @@ const watchSrcDirectory = async (dir: string, compilerCtx: d.CompilerCtx) => {
 
   srcFiles.filter(({ isFile }) => isFile).forEach(({ absPath }) => compilerCtx.addWatchFile(absPath));
 
-  compilerCtx.addWatchDir(dir, true);
+  compilerCtx.addWatchDir(config.srcDir, true);
 };
 
 const watchRootFiles = async (config: d.Config, compilerCtx: d.CompilerCtx) => {
