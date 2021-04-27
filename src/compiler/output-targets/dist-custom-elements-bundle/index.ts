@@ -131,7 +131,7 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
     exportNames.push(exportName);
   });
 
-  exp.push(`export const defineCustomElements = (opts) => {`);
+  exp.push(`export const ${outputTarget.defineFunctionName || 'defineCustomElements'} = (opts) => {`);
   exp.push(`    if (typeof customElements !== 'undefined') {`);
   exp.push(`        [`);
   exp.push(`            ${exportNames.join(',\n    ')}`);

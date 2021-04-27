@@ -1903,6 +1903,7 @@ export interface OutputTargetDistCustomElementsBundle extends OutputTargetBaseNe
   copy?: CopyTask[];
   inlineDynamicImports?: boolean;
   includeGlobalScripts?: boolean;
+  defineFunctionName?: string;
   minify?: boolean;
   typesDir?: string;
 }
