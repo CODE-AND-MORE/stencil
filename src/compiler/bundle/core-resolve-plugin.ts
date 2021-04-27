@@ -51,7 +51,12 @@ export const coreResolvePlugin = (config: d.Config, compilerCtx: d.CompilerCtx, 
             id: STENCIL_INTERNAL_CLIENT_ID,
             external: true,
           };
-        }
+        } else if (platform === 'client') {
+          // WARNING: when importing custom elements build to an app we need to
+          // import app-data, in other case we rollup will bundle two version of stencil's internals
+          // TODO: need to understand if there any unexpected disavantages
+          return internalClient + APP_DATA_CONDITIONAL;
+        } 
         // importing @stencil/core/internal/client directly, so it shouldn't get
         // the custom app-data conditionals
         return internalClient;
