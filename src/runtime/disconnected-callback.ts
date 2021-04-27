@@ -21,7 +21,7 @@ export const disconnectedCallback = (elm: d.HostElement) => {
       plt.$cssShim$.removeHost(elm);
     }
 
-    if (BUILD.lazyLoad && BUILD.disconnectedCallback) {
+    if (!hostRef.$cmpMeta$.$customElement$ && BUILD.lazyLoad && BUILD.disconnectedCallback) {
       safeCall(instance, 'disconnectedCallback');
     }
     if (BUILD.cmpDidUnload) {
