@@ -69,6 +69,7 @@ export const initializeComponent = async (elm: d.HostElement, hostRef: d.HostRef
       // sync constructor component
       Cstr = elm.constructor as any;
       hostRef.$flags$ |= HOST_FLAGS.isWatchReady | HOST_FLAGS.hasInitializedComponent;
+      // todo we do not fire connectectCallback, cause it will be fired elsewhere, is it valid?
     }
 
     if (BUILD.style && Cstr.style) {
