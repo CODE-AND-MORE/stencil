@@ -9,7 +9,10 @@ import { HYDRATE_ID, NODE_TYPE, PLATFORM_FLAGS } from './runtime-constants';
 import { initializeClientHydrate } from './client-hydrate';
 import { initializeComponent, fireConnectedCallback } from './initialize-component';
 
-export const connectedCallback = (elm: d.HostElement) => {
+/**
+ * @returns true if connectedCallback was executed, false if is temporary disabled
+ */
+export const connectedCallback = (elm: d.HostElement): boolean => {
   if ((plt.$flags$ & PLATFORM_FLAGS.isTmpDisconnected) === 0) {
     const hostRef = getHostRef(elm);
     const cmpMeta = hostRef.$cmpMeta$;
@@ -101,7 +104,11 @@ export const connectedCallback = (elm: d.HostElement) => {
     }
 
     endConnected();
+
+    return true;
   }
+
+  return false;
 };
 
 const setContentReference = (elm: d.HostElement) => {
