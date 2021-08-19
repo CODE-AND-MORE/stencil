@@ -17,6 +17,7 @@ export const proxyCustomElement = (Cstr: any, compactMeta: d.ComponentRuntimeMet
   const cmpMeta: d.ComponentRuntimeMeta = {
     $flags$: compactMeta[0],
     $tagName$: compactMeta[1],
+    $customElement$: true
   };
   if (BUILD.member) {
     cmpMeta.$members$ = compactMeta[2];
@@ -41,14 +42,12 @@ export const proxyCustomElement = (Cstr: any, compactMeta: d.ComponentRuntimeMet
       registerHost(this, cmpMeta);
     },
     connectedCallback() {
-      connectedCallback(this);
-      if (BUILD.connectedCallback && originalConnectedCallback) {
+      if (connectedCallback(this) && BUILD.connectedCallback && originalConnectedCallback) {
         originalConnectedCallback.call(this);
       }
     },
     disconnectedCallback() {
-      disconnectedCallback(this);
-      if (BUILD.disconnectedCallback && originalDisconnectedCallback) {
+      if (disconnectedCallback(this) && BUILD.disconnectedCallback && originalDisconnectedCallback) {
         originalDisconnectedCallback.call(this);
       }
     },

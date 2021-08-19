@@ -45,6 +45,7 @@ const bundleCustomElements = async (
       conditionals: getCustomElementsBuildConditionals(config, buildCtx.components),
       customTransformers: getCustomElementBundleCustomTransformer(config, compilerCtx),
       externalRuntime: !!outputTarget.externalRuntime,
+      external: outputTarget.external,
       inlineWorkers: true,
       inputs: {
         index: '\0core',
@@ -112,6 +113,13 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
     const importName = cmp.componentClassName;
     const importAs = `$Cmp${exportName}`;
 
+    if (outputTarget.external) {
+      const cmpModule = buildCtx.compilerCtx.moduleMap.get(cmp.sourceFilePath);
+      if (cmpModule && cmpModule.collectionName && outputTarget.external.find(ext => typeof ext === "string" ? ext === cmpModule.collectionName : cmpModule.collectionName.match(ext))) {
+        return;
+      }
+    }
+
     if (cmp.isPlain) {
       exp.push(`export { ${importName} as ${exportName} } from '${cmp.sourceFilePath}';`);
     } else {
@@ -123,7 +131,7 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
     exportNames.push(exportName);
   });
 
-  exp.push(`export const defineCustomElements = (opts) => {`);
+  exp.push(`export const ${outputTarget.defineFunctionName || 'defineCustomElements'} = (opts) => {`);
   exp.push(`    if (typeof customElements !== 'undefined') {`);
   exp.push(`        [`);
   exp.push(`            ${exportNames.join(',\n    ')}`);

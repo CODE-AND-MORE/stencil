@@ -43,7 +43,9 @@ export const runTsProgram = async (
       emittedDts.push(srcDtsPath);
       typesOutputTarget.forEach((o) => {
         const distPath = join(o.typesDir, relativeEmitFilepath);
-        data = updateStencilTypesImports(o.typesDir, distPath, data);
+        if (!o.keepCoreRefs) {
+          data = updateStencilTypesImports(o.typesDir, distPath, data);
+        }
         compilerCtx.fs.writeFile(distPath, data);
       });
     }

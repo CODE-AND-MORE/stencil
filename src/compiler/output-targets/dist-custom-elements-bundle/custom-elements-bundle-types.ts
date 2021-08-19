@@ -46,7 +46,7 @@ const generateCustomElementsTypesOutput = async (
     ` * Use the standard [customElements.define()](https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry/define) `,
     ` * method instead to define custom elements individually, or to provide a different tag name.`,
     ` */`,
-    `export declare const defineCustomElements: (opts?: any) => void;`,
+    `export declare const ${outputTarget.defineFunctionName || 'defineCustomElements'}: (opts?: any) => void;`,
     ``,
     `/**`,
     ` * Used to manually set the base path where assets can be found.`,
