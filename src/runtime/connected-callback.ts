@@ -32,7 +32,9 @@ export const connectedCallback = (elm: d.HostElement): boolean => {
         hostId = elm.getAttribute(HYDRATE_ID);
         if (hostId) {
           if (BUILD.shadowDom && supportsShadow && cmpMeta.$flags$ & CMP_FLAGS.shadowDomEncapsulation) {
-            const scopeId = BUILD.mode ? addStyle(elm.shadowRoot, cmpMeta, elm.getAttribute('s-mode')) : addStyle(elm.shadowRoot, cmpMeta);
+            const scopeId = BUILD.mode
+              ? addStyle(elm.shadowRoot, cmpMeta, elm.getAttribute('s-mode'))
+              : addStyle(elm.shadowRoot, cmpMeta);
             elm.classList.remove(scopeId + '-h', scopeId + '-s');
           }
           initializeClientHydrate(elm, cmpMeta.$tagName$, hostId, hostRef);
@@ -44,7 +46,11 @@ export const connectedCallback = (elm: d.HostElement): boolean => {
         // if the slot polyfill is required we'll need to put some nodes
         // in here to act as original content anchors as we move nodes around
         // host element has been connected to the DOM
-        if (BUILD.hydrateServerSide || ((BUILD.slot || BUILD.shadowDom) && cmpMeta.$flags$ & (CMP_FLAGS.hasSlotRelocation | CMP_FLAGS.needsShadowDomShim))) {
+        if (
+          BUILD.hydrateServerSide ||
+          ((BUILD.slot || BUILD.shadowDom) &&
+            cmpMeta.$flags$ & (CMP_FLAGS.hasSlotRelocation | CMP_FLAGS.needsShadowDomShim))
+        ) {
           setContentReference(elm);
         }
       }
@@ -58,7 +64,10 @@ export const connectedCallback = (elm: d.HostElement): boolean => {
           // climb up the ancestors looking for the first
           // component that hasn't finished its lifecycle update yet
           if (
-            (BUILD.hydrateClientSide && ancestorComponent.nodeType === NODE_TYPE.ElementNode && ancestorComponent.hasAttribute('s-id') && ancestorComponent['s-p']) ||
+            (BUILD.hydrateClientSide &&
+              ancestorComponent.nodeType === NODE_TYPE.ElementNode &&
+              ancestorComponent.hasAttribute('s-id') &&
+              ancestorComponent['s-p']) ||
             ancestorComponent['s-p']
           ) {
             // we found this components first ancestor component
@@ -118,7 +127,9 @@ const setContentReference = (elm: d.HostElement) => {
   // let's pick out the inner content for slot projection
   // create a node to represent where the original
   // content was first placed, which is useful later on
-  const contentRefElm = (elm['s-cr'] = doc.createComment(BUILD.isDebug ? `content-ref (host=${elm.localName})` : '') as any);
+  const contentRefElm = (elm['s-cr'] = doc.createComment(
+    BUILD.isDebug ? `content-ref (host=${elm.localName})` : ''
+  ) as any);
   contentRefElm['s-cn'] = true;
   elm.insertBefore(contentRefElm, elm.firstChild);
 };

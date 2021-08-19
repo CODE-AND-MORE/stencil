@@ -14,7 +14,7 @@ import { safeCall } from './update-component';
 
     if (BUILD.hostListener) {
       if (hostRef.$rmListeners$) {
-        hostRef.$rmListeners$.map(rmListener => rmListener());
+        hostRef.$rmListeners$.map((rmListener) => rmListener());
         hostRef.$rmListeners$ = undefined;
       }
     }
