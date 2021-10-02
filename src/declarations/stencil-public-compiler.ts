@@ -169,6 +169,17 @@ export interface StencilConfig {
   hydratedFlag?: HydratedFlag;
 
   /**
+   * Ionic perfers to hide all components prior to hydration with a style tag appended
+   * to the head of the document containing some `visibility: hidden;` css rules.
+   *
+   * Disabling this will remove the style tag that sets `visibility: hidden;` on all
+   * unhydrated web components. This more closely follows the HTML spec, and allows
+   * you to set your own fallback content.
+   *
+   */
+  invisiblePrehydration?: boolean;
+
+  /**
    * Sets the task queue used by stencil's runtime. The task queue schedules DOM read and writes
    * across the frames to efficiently render and reduce layout thrashing. By default,
    * `async` is used. It's recommended to also try each setting to decide which works
@@ -280,6 +291,12 @@ export interface ConfigExtras {
    * for very special cases and rarely needed. Defaults to `false`.
    */
   scriptDataOpts?: boolean;
+
+  /**
+   * Experimental flag to align the behavior of invoking `textContent` on a scoped component to act more like a
+   * component that uses the shadow DOM. Defaults to `false`
+   */
+  scopedSlotTextContentFix?: boolean;
 
   /**
    * If enabled `true`, the runtime will check if the shadow dom shim is required. However,
@@ -866,7 +883,7 @@ export interface SitemapXmpResults {
  * of the actual platform it's being ran ontop of.
  */
 export interface CompilerSystem {
-  name: 'deno' | 'node' | 'in-memory';
+  name: 'node' | 'in-memory';
   version: string;
   events?: BuildEvents;
   details?: SystemDetails;
@@ -1900,6 +1917,12 @@ export interface OutputTargetDistCustomElements extends OutputTargetBaseNext {
   inlineDynamicImports?: boolean;
   includeGlobalScripts?: boolean;
   minify?: boolean;
+  /**
+   * Enables the auto-definition of a component and its children (recursively) in the custom elements registry. This
+   * functionality allows consumers to bypass the explicit call to define a component, its children, its children's
+   * children, etc. Users of this flag should be aware that enabling this functionality may increase bundle size.
+   */
+  autoDefineCustomElements?: boolean;
 }
 
 export interface OutputTargetDistCustomElementsBundle extends OutputTargetBaseNext {
