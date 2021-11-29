@@ -1,3 +1,7 @@
+import * as path from 'path';
+
+const { WWW_OUT_DIR } = require('../constants');
+
 const activeRendering = new Set();
 const onAppReadyCallbacks: Function[] = [];
 
@@ -58,7 +62,7 @@ export function setupDomTests(document: Document) {
     app.addEventListener('stencil_componentDidRender', (ev) => didRender(ev.target));
 
     app.className = 'test-spec';
-    testBed!.appendChild(app);
+    testBed.appendChild(app);
 
     if (url) {
       app.setAttribute('data-url', url);
@@ -76,10 +80,30 @@ export function setupDomTests(document: Document) {
   }
 
   /**
+   * Run this after each test that needs it's resources flushed
+   */
+  function tearDownStylesScripts() {
+    document.head.querySelectorAll('style[data-styles]').forEach((e) => e.remove());
+
+    [
+      '/build/testinvisibleprehydration.esm.js',
+      '/build/testinvisibleprehydration.js',
+      '/build/testprehydratedtruestyles.esm.js',
+      '/build/testprehydratedtruestyles.js',
+      '/build/testprehydratedfalsestyles.esm.js',
+      '/build/testprehydratedfalsestyles.js',
+      '/build/testapp.esm.js',
+      '/build/testapp.js',
+    ].forEach((src) => {
+      document.querySelectorAll(`script[src="${src}"]`).forEach((e) => e.remove());
+    });
+  }
+
+  /**
    * Create web component for executing tests against
    */
   function renderTest(url: string, app: HTMLElement, waitForStencilReady: number) {
-    url = '/base/www' + url;
+    url = path.join('base', WWW_OUT_DIR, url);
 
     return new Promise<HTMLElement>((resolve, reject) => {
       try {
@@ -169,7 +193,7 @@ export function setupDomTests(document: Document) {
     });
   }
 
-  return { setupDom, tearDownDom };
+  return { setupDom, tearDownDom, tearDownStylesScripts };
 }
 
 /**
