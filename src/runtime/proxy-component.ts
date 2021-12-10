@@ -55,7 +55,8 @@ export const proxyComponent = (Cstr: d.ComponentConstructor, cmpMeta: d.Componen
         BUILD.lazyLoad &&
         BUILD.method &&
         flags & PROXY_FLAGS.isElementConstructor &&
-        memberFlags & MEMBER_FLAGS.Method
+        memberFlags & MEMBER_FLAGS.Method &&
+        !cmpMeta.$customElement$
       ) {
         // proxyComponent - method
         Object.defineProperty(prototype, memberName, {
