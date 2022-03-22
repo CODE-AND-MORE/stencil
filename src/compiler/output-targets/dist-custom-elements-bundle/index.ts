@@ -167,6 +167,10 @@ const generateEntryPoint = (outputTarget: d.OutputTargetDistCustomElementsBundle
   exp.push(`    }`);
   exp.push(`};`);
 
+  if (outputTarget.autoDefineCustomElements) {
+    exp.push(`${outputTarget.defineFunctionName || 'defineCustomElements'}();`);
+  }
+
   return [...imp, ...exp].join('\n') + '\n';
 };
 
