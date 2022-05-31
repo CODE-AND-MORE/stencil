@@ -58,6 +58,15 @@ export const validateCustomElement = (
     }
     outputs.push(outputTarget);
 
+    if (!userOutputs.find(isOutputTargetDist)) {
+      outputs.push({
+        type: DIST_TYPES,
+        dir: outputTarget.dir,
+        typesDir: outputTarget.dir + "/types",
+        keepCoreRefs: true
+      });
+    }
+
     return outputs;
   }, [] as (OutputTargetDistCustomElements | OutputTargetCopy | OutputTargetDistTypes)[]);
 };

@@ -17,11 +17,8 @@ export const initializeComponent = async (
   Cstr?: any
 ) => {
   // initializeComponent
-  if (
-    (BUILD.lazyLoad || BUILD.hydrateServerSide || BUILD.style) &&
-    (hostRef.$flags$ & HOST_FLAGS.hasInitializedComponent) === 0
-  ) {
-    if (BUILD.lazyLoad || BUILD.hydrateClientSide) {
+  if ((BUILD.lazyLoad || BUILD.hydrateServerSide || BUILD.style) && (hostRef.$flags$ & HOST_FLAGS.hasInitializedComponent) === 0) {
+    if (!cmpMeta.$customElement$ && (BUILD.lazyLoad || BUILD.hydrateClientSide)) {
       // we haven't initialized this element yet
       hostRef.$flags$ |= HOST_FLAGS.hasInitializedComponent;
 
@@ -80,6 +77,7 @@ export const initializeComponent = async (
     } else {
       // sync constructor component
       Cstr = elm.constructor as any;
+
       hostRef.$flags$ |= HOST_FLAGS.hasInitializedComponent;
       // wait for the CustomElementRegistry to mark the component as ready before setting `isWatchReady`. Otherwise,
       // watchers may fire prematurely if `customElements.get()`/`customElements.whenDefined()` resolves _before_

@@ -1,8 +1,9 @@
 import type * as d from '../../../declarations';
-import { COPY, isOutputTargetDistCustomElementsBundle } from '../../output-targets/output-utils';
+import { COPY, isOutputTargetDist, isOutputTargetDistCustomElementsBundle } from '../../output-targets/output-utils';
 import { getAbsolutePath } from '../config-utils';
 import { isBoolean } from '@utils';
 import { validateCopy } from '../validate-copy';
+import { DIST_TYPES } from '../../output-targets/output-utils';
 
 export const validateCustomElementBundle = (config: d.Config, userOutputs: d.OutputTarget[]) => {
   return userOutputs.filter(isOutputTargetDistCustomElementsBundle).reduce((arr, o) => {
@@ -27,6 +28,15 @@ export const validateCustomElementBundle = (config: d.Config, userOutputs: d.Out
     }
     arr.push(outputTarget);
 
+    if (!userOutputs.find(isOutputTargetDist)) {
+      arr.push({
+        type: DIST_TYPES,
+        dir: outputTarget.dir,
+        typesDir: outputTarget.typesDir || outputTarget.dir + "/types",
+        keepCoreRefs: true
+      });
+    }
+    
     return arr;
-  }, [] as (d.OutputTargetDistCustomElementsBundle | d.OutputTargetCopy)[]);
+  }, [] as (d.OutputTargetDistCustomElementsBundle | d.OutputTargetCopy | d.OutputTargetDistTypes)[]);
 };

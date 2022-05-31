@@ -6,6 +6,12 @@ export interface BundleOptions {
   id: string;
   conditionals?: BuildConditionals;
   externalRuntime?: boolean;
+  
+  /**
+   * External modules (will be passed to rollup).
+   */
+  external?: (string | RegExp)[];
+  
   platform: 'client' | 'hydrate' | 'worker';
   customTransformers?: TransformerFactory<SourceFile>[];
   inputs: { [entryKey: string]: string };

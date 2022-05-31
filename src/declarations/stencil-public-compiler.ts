@@ -1861,6 +1861,7 @@ export interface OutputTargetDistTypes extends OutputTargetBase {
   type: 'dist-types';
   dir: string;
   typesDir: string;
+  keepCoreRefs?: boolean;
 }
 
 export interface OutputTargetDistLazy extends OutputTargetBase {
@@ -1996,10 +1997,14 @@ export interface OutputTargetDistCustomElementsBundle extends OutputTargetBaseNe
   type: 'dist-custom-elements-bundle';
   empty?: boolean;
   externalRuntime?: boolean;
+  external?: (string | RegExp)[];
   copy?: CopyTask[];
   inlineDynamicImports?: boolean;
   includeGlobalScripts?: boolean;
+  defineFunctionName?: string;
+  autoDefineCustomElements?: boolean;
   minify?: boolean;
+  typesDir?: string;
 }
 
 /**
