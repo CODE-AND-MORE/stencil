@@ -13,7 +13,7 @@ export const createJsVarName = (fileName: string) => {
     fileName = dashToPascalCase(fileName);
 
     if (fileName.length > 1) {
-      fileName = fileName[0].toLowerCase() + fileName.substr(1);
+      fileName = fileName[0].toLowerCase() + fileName.slice(1);
     } else {
       fileName = fileName.toLowerCase();
     }
@@ -25,66 +25,18 @@ export const createJsVarName = (fileName: string) => {
   return fileName;
 };
 
-export const getFileExt = (fileName: string) => {
-  if (typeof fileName === 'string') {
-    const parts = fileName.split('.');
-    if (parts.length > 1) {
-      return parts[parts.length - 1].toLowerCase();
-    }
-  }
-  return null;
-};
-
 /**
- * Test if a file is a typescript source file, such as .ts or .tsx.
- * However, d.ts files and spec.ts files return false.
- * @param filePath
+ * Determines if a given file path points to a type declaration file (ending in .d.ts) or not. This function is
+ * case-insensitive in its heuristics.
+ * @param filePath the path to check
+ * @returns `true` if the given `filePath` points to a type declaration file, `false` otherwise
  */
-export const isTsFile = (filePath: string) => {
-  const parts = filePath.toLowerCase().split('.');
-  if (parts.length > 1) {
-    if (parts[parts.length - 1] === 'ts' || parts[parts.length - 1] === 'tsx') {
-      if (parts.length > 2 && (parts[parts.length - 2] === 'd' || parts[parts.length - 2] === 'spec')) {
-        return false;
-      }
-      return true;
-    }
-  }
-  return false;
-};
-
-export const isDtsFile = (filePath: string) => {
+export const isDtsFile = (filePath: string): boolean => {
   const parts = filePath.toLowerCase().split('.');
   if (parts.length > 2) {
     return parts[parts.length - 2] === 'd' && parts[parts.length - 1] === 'ts';
   }
   return false;
-};
-
-export const isJsFile = (filePath: string) => {
-  const parts = filePath.toLowerCase().split('.');
-  if (parts.length > 1) {
-    if (parts[parts.length - 1] === 'js') {
-      if (parts.length > 2 && parts[parts.length - 2] === 'spec') {
-        return false;
-      }
-      return true;
-    }
-  }
-  return false;
-};
-
-export const hasFileExtension = (filePath: string, extensions: string[]) => {
-  filePath = filePath.toLowerCase();
-  return extensions.some((ext) => filePath.endsWith('.' + ext));
-};
-
-export const isCssFile = (filePath: string) => {
-  return hasFileExtension(filePath, ['css']);
-};
-
-export const isHtmlFile = (filePath: string) => {
-  return hasFileExtension(filePath, ['html', 'htm']);
 };
 
 /**
@@ -175,11 +127,12 @@ export const parseJson = (jsonStr: string, filePath?: string) => {
     try {
       rtn.data = JSON.parse(jsonStr);
     } catch (e) {
-      const msg = e.message;
       rtn.diagnostic = buildError();
       rtn.diagnostic.absFilePath = filePath;
       rtn.diagnostic.header = `Error Parsing JSON`;
-      rtn.diagnostic.messageText = msg;
+      if (e instanceof Error) {
+        rtn.diagnostic.messageText = e.message;
+      }
     }
   } else {
     rtn.diagnostic = buildError();
