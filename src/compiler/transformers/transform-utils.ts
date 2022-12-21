@@ -1,7 +1,8 @@
-import type * as d from '../../declarations';
-import { augmentDiagnosticWithNode, buildError, normalizePath } from '@utils';
-import { MEMBER_DECORATORS_TO_REMOVE } from './decorators-to-static/decorators-constants';
+import { augmentDiagnosticWithNode, buildError, normalizePath, readOnlyArrayHasStringMember } from '@utils';
 import ts from 'typescript';
+
+import type * as d from '../../declarations';
+import { MEMBER_DECORATORS_TO_REMOVE } from './decorators-to-static/decorators-constants';
 
 export const getScriptTarget = () => {
   // using a fn so the browser compiler doesn't require the global ts for startup
@@ -14,98 +15,154 @@ export const getScriptTarget = () => {
  * @returns `true` if the member has the `private` or `protected` modifier attached to it. `false` otherwise
  */
 export const isMemberPrivate = (member: ts.ClassElement): boolean => {
-  if (
-    member.modifiers &&
-    member.modifiers.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)
-  ) {
-    return true;
-  }
-  return false;
+  return !!retrieveTsModifiers(member)?.some(
+    (m) => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword
+  );
 };
 
-export const convertValueToLiteral = (val: any, refs: WeakSet<any> = null) => {
+/**
+ * Convert a JavaScript value to the TypeScript Intermediate Representation
+ * (IR) for a literal Abstract Syntax Tree (AST) node with that same value. The
+ * value to convert may be a primitive type like `string`, `boolean`, etc or
+ * may be an `Object`, `Array`, etc.
+ *
+ * Note that this function takes a param (`refs`) with a default value,
+ * normally a value should _not_ be passed for this parameter since it is
+ * intended to be used for recursive calls.
+ *
+ * @param val the value to convert
+ * @param refs a set of references, used in recursive calls to avoid
+ * circular references when creating object literal IR instances. **note that
+ * you shouldn't pass this parameter unless you know what you're doing!**
+ * @returns TypeScript IR for a literal corresponding to the JavaScript value
+ * with which the function was called
+ */
+export const convertValueToLiteral = (
+  val: any,
+  refs: WeakSet<any> = null
+):
+  | ts.Identifier
+  | ts.StringLiteral
+  | ts.ObjectLiteralExpression
+  | ts.ArrayLiteralExpression
+  | ts.TrueLiteral
+  | ts.FalseLiteral
+  | ts.BigIntLiteral
+  | ts.NumericLiteral => {
   if (refs == null) {
     refs = new WeakSet();
   }
   if (val === String) {
-    return ts.createIdentifier('String');
+    return ts.factory.createIdentifier('String');
   }
   if (val === Number) {
-    return ts.createIdentifier('Number');
+    return ts.factory.createIdentifier('Number');
   }
   if (val === Boolean) {
-    return ts.createIdentifier('Boolean');
+    return ts.factory.createIdentifier('Boolean');
   }
   if (val === undefined) {
-    return ts.createIdentifier('undefined');
+    return ts.factory.createIdentifier('undefined');
   }
   if (val === null) {
-    return ts.createIdentifier('null');
+    return ts.factory.createIdentifier('null');
   }
   if (Array.isArray(val)) {
     return arrayToArrayLiteral(val, refs);
   }
   if (typeof val === 'object') {
     if ((val as ConvertIdentifier).__identifier && (val as ConvertIdentifier).__escapedText) {
-      return ts.createIdentifier((val as ConvertIdentifier).__escapedText);
+      return ts.factory.createIdentifier((val as ConvertIdentifier).__escapedText);
     }
     return objectToObjectLiteral(val, refs);
   }
-  return ts.createLiteral(val);
+
+  // the remainder of the implementation of this function was derived from the deprecated `createLiteral` function
+  // found in typescript@4.8.4
+  if (typeof val === 'number') {
+    return ts.factory.createNumericLiteral(val);
+  }
+  if (typeof val === 'object' && 'base10Value' in val) {
+    return ts.factory.createBigIntLiteral(val);
+  }
+  if (typeof val === 'boolean') {
+    return val ? ts.factory.createTrue() : ts.factory.createFalse();
+  }
+  if (typeof val === 'string') {
+    return ts.factory.createStringLiteral(val, undefined);
+  }
+
+  return ts.factory.createStringLiteralFromNode(val);
 };
 
+/**
+ * Convert a JavaScript Array instance to TypeScript's Intermediate
+ * Representation (IR) for an array literal. This is done by recursively using
+ * {@link convertValueToLiteral} to create a new array consisting of the
+ * TypeScript IR of each element in the array to be converted, and then creating
+ * the TypeScript IR for _that_ array.
+ *
+ * @param list the array instance to convert
+ * @param refs a set of references to objects, used when converting objects to
+ * avoid circular references
+ * @returns TypeScript IR for the array we want to convert
+ */
 const arrayToArrayLiteral = (list: any[], refs: WeakSet<any>): ts.ArrayLiteralExpression => {
   const newList: any[] = list.map((l) => {
     return convertValueToLiteral(l, refs);
   });
-  return ts.createArrayLiteral(newList);
+  return ts.factory.createArrayLiteralExpression(newList);
 };
 
+/**
+ * Convert a JavaScript object (i.e. an object existing at runtime) to the
+ * corresponding TypeScript Intermediate Representation (IR)
+ * ({@see ts.ObjectLiteralExpression}) for an object literal. This function
+ * takes an argument holding a `WeakSet` of references to objects which is
+ * used to avoid circular references. Objects that are converted in this
+ * function are added to the set, and if an object is already present then an
+ * `undefined` literal (in TypeScript IR) is returned instead of another
+ * object literal, as continuing to convert a circular reference would, well,
+ * never end!
+ *
+ * @param obj the JavaScript object to convert to TypeScript IR
+ * @param refs a set of references to objects, used to avoid circular references
+ * @returns a TypeScript object literal expression
+ */
 const objectToObjectLiteral = (obj: { [key: string]: any }, refs: WeakSet<any>): ts.ObjectLiteralExpression => {
   if (refs.has(obj)) {
-    return ts.createIdentifier('undefined') as any;
+    return ts.factory.createIdentifier('undefined') as any;
   }
 
   refs.add(obj);
 
   const newProperties: ts.ObjectLiteralElementLike[] = Object.keys(obj).map((key) => {
-    const prop = ts.createPropertyAssignment(
-      ts.createLiteral(key),
+    const prop = ts.factory.createPropertyAssignment(
+      ts.factory.createStringLiteral(key),
       convertValueToLiteral(obj[key], refs) as ts.Expression
     );
     return prop;
   });
 
-  return ts.createObjectLiteral(newProperties, true);
+  return ts.factory.createObjectLiteralExpression(newProperties, true);
 };
 
-export const createStaticGetter = (propName: string, returnExpression: ts.Expression) => {
-  return ts.createGetAccessor(
-    undefined,
-    [ts.createToken(ts.SyntaxKind.StaticKeyword)],
+/**
+ * Create a TypeScript getter declaration AST node corresponding to a
+ * supplied prop name and return value
+ *
+ * @param propName the name of the prop to access
+ * @param returnExpression a TypeScript AST node to return from the getter
+ * @returns an AST node representing a getter
+ */
+export const createStaticGetter = (propName: string, returnExpression: ts.Expression): ts.GetAccessorDeclaration => {
+  return ts.factory.createGetAccessorDeclaration(
+    [ts.factory.createToken(ts.SyntaxKind.StaticKeyword)],
     propName,
+    [],
     undefined,
-    undefined,
-    ts.createBlock([ts.createReturn(returnExpression)])
+    ts.factory.createBlock([ts.factory.createReturnStatement(returnExpression)])
   );
-};
-
-export const removeDecorators = (node: ts.Node, decoratorNames: Set<string>) => {
-  if (node.decorators) {
-    const updatedDecoratorList = node.decorators.filter((dec) => {
-      const name =
-        ts.isCallExpression(dec.expression) &&
-        ts.isIdentifier(dec.expression.expression) &&
-        dec.expression.expression.text;
-      return !decoratorNames.has(name);
-    });
-    if (updatedDecoratorList.length === 0) {
-      return undefined;
-    } else if (updatedDecoratorList.length !== node.decorators.length) {
-      return ts.createNodeArray(updatedDecoratorList);
-    }
-  }
-  return node.decorators;
 };
 
 export const getStaticValue = (staticMembers: ts.ClassElement[], staticName: string): any => {
@@ -353,7 +410,7 @@ const getAllTypeReferences = (node: ts.Node): ReadonlyArray<string> => {
       if (node.typeArguments) {
         // a type may contain types itself (e.g. generics - Foo<Bar>)
         node.typeArguments
-          .filter((typeArg: ts.TypeNode) => ts.isTypeReferenceNode(typeArg))
+          .filter((typeArg: ts.TypeNode): typeArg is ts.TypeReferenceNode => ts.isTypeReferenceNode(typeArg))
           .forEach((typeRef: ts.TypeReferenceNode) => {
             const typeName = typeRef.typeName as ts.Identifier;
             if (typeName && typeName.escapedText) {
@@ -377,7 +434,7 @@ export const validateReferences = (
 ) => {
   Object.keys(references).forEach((refName) => {
     const ref = references[refName];
-    if (ref.path === '@stencil/core' && MEMBER_DECORATORS_TO_REMOVE.has(refName)) {
+    if (ref.path === '@stencil/core' && readOnlyArrayHasStringMember(MEMBER_DECORATORS_TO_REMOVE, refName)) {
       const err = buildError(diagnostics);
       augmentDiagnosticWithNode(err, node);
     }
@@ -429,18 +486,20 @@ const getTypeReferenceLocation = (typeName: string, tsNode: ts.Node): d.Componen
 
   // Loop through all top level exports to find if any reference to the type for 'local' reference location
   const isExported = sourceFileObj.statements.some((st) => {
+    const statementModifiers = retrieveTsModifiers(st);
+
     // Is the interface defined in the file and exported
     const isInterfaceDeclarationExported =
       ts.isInterfaceDeclaration(st) &&
       (<ts.Identifier>st.name).getText() === typeName &&
-      Array.isArray(st.modifiers) &&
-      st.modifiers.some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
+      Array.isArray(statementModifiers) &&
+      statementModifiers.some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
 
     const isTypeAliasDeclarationExported =
       ts.isTypeAliasDeclaration(st) &&
       (<ts.Identifier>st.name).getText() === typeName &&
-      Array.isArray(st.modifiers) &&
-      st.modifiers.some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
+      Array.isArray(statementModifiers) &&
+      statementModifiers.some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
 
     // Is the interface exported through a named export
     const isTypeInExportDeclaration =
@@ -554,11 +613,13 @@ export const getComponentTagName = (staticMembers: ts.ClassElement[]) => {
   return null;
 };
 
-export const isStaticGetter = (member: ts.ClassElement) => {
+export const isStaticGetter = (member: ts.ClassElement): boolean => {
+  const modifiers = retrieveTsModifiers(member);
   return (
-    member.kind === ts.SyntaxKind.GetAccessor &&
-    member.modifiers &&
-    member.modifiers.some(({ kind }) => kind === ts.SyntaxKind.StaticKeyword)
+    (member.kind === ts.SyntaxKind.GetAccessor &&
+      Array.isArray(modifiers) &&
+      modifiers.some(({ kind }) => kind === ts.SyntaxKind.StaticKeyword)) ??
+    false
   );
 };
 
@@ -626,24 +687,6 @@ export const isMethod = (member: ts.ClassElement, methodName: string): member is
   return ts.isMethodDeclaration(member) && member.name && (member.name as any).escapedText === methodName;
 };
 
-export const isAsyncFn = (typeChecker: ts.TypeChecker, methodDeclaration: ts.MethodDeclaration) => {
-  if (methodDeclaration.modifiers) {
-    if (methodDeclaration.modifiers.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword)) {
-      return true;
-    }
-  }
-
-  const methodSignature = typeChecker.getSignatureFromDeclaration(methodDeclaration);
-  const returnType = methodSignature.getReturnType();
-  const typeStr = typeChecker.typeToString(
-    returnType,
-    undefined,
-    ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias | ts.TypeFormatFlags.InElementType
-  );
-
-  return typeStr.includes('Promise<');
-};
-
 export const createImportStatement = (importFnNames: string[], importPath: string) => {
   // ESM Imports
   // import { importNames } from 'importPath';
@@ -667,11 +710,10 @@ export const createImportStatement = (importFnNames: string[], importPath: strin
     );
   });
 
-  return ts.createImportDeclaration(
+  return ts.factory.createImportDeclaration(
     undefined,
-    undefined,
-    ts.createImportClause(undefined, ts.createNamedImports(importSpecifiers)),
-    ts.createLiteral(importPath)
+    ts.factory.createImportClause(false, undefined, ts.factory.createNamedImports(importSpecifiers)),
+    ts.factory.createStringLiteral(importPath)
   );
 };
 
@@ -679,7 +721,7 @@ export const createRequireStatement = (importFnNames: string[], importPath: stri
   // CommonJS require()
   // const { a, b, c } = require(importPath);
 
-  const importBinding = ts.createObjectBindingPattern(
+  const importBinding = ts.factory.createObjectBindingPattern(
     importFnNames.map((importKey) => {
       const splt = importKey.split(' as ');
       let importAs = importKey;
@@ -689,18 +731,23 @@ export const createRequireStatement = (importFnNames: string[], importPath: stri
         importAs = splt[1];
         importFnName = splt[0];
       }
-      return ts.createBindingElement(undefined, importFnName, importAs);
+      return ts.factory.createBindingElement(undefined, importFnName, importAs);
     })
   );
 
-  return ts.createVariableStatement(
+  return ts.factory.createVariableStatement(
     undefined,
-    ts.createVariableDeclarationList(
+    ts.factory.createVariableDeclarationList(
       [
-        ts.createVariableDeclaration(
+        ts.factory.createVariableDeclaration(
           importBinding,
           undefined,
-          ts.createCall(ts.createIdentifier('require'), [], [ts.createLiteral(importPath)])
+          undefined,
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('require'),
+            [],
+            [ts.factory.createStringLiteral(importPath)]
+          )
         ),
       ],
       ts.NodeFlags.Const
@@ -712,3 +759,50 @@ export interface ConvertIdentifier {
   __identifier: boolean;
   __escapedText: string;
 }
+
+/**
+ * Helper method for retrieving all decorators & modifiers from a TypeScript {@link ts.Node} entity.
+ *
+ * Starting with TypeScript v4.8, decorators and modifiers have been coalesced into a single field, and retrieving
+ * decorators directly has been deprecated. This helper function pulls all decorators & modifiers out of said field.
+ *
+ * @see {@link https://devblogs.microsoft.com/typescript/announcing-typescript-4-8/#decorators-are-placed-on-modifiers-on-typescripts-syntax-trees|The TypeScript 4.8 Announcement}
+ *
+ * @param node the node to pull decorators & modifiers out of
+ * @returns a list containing decorators & modifiers on the node
+ */
+export const retrieveModifierLike = (node: ts.Node): ReadonlyArray<ts.ModifierLike> => {
+  return [...(retrieveTsDecorators(node) ?? []), ...(retrieveTsModifiers(node) ?? [])];
+};
+
+/**
+ * Helper method for retrieving decorators from a TypeScript {@link ts.Node} entity.
+ *
+ * Starting with TypeScript v4.8, decorators and modifiers have been coalesced into a single field, and retrieving
+ * decorators directly has been deprecated. This helper function is a utility that wraps various helper functions that
+ * the TypeScript compiler exposes for pulling decorators out of said field.
+ *
+ * @see {@link https://devblogs.microsoft.com/typescript/announcing-typescript-4-8/#decorators-are-placed-on-modifiers-on-typescripts-syntax-trees|The TypeScript 4.8 Announcement}
+ *
+ * @param node the node to pull decorators out of
+ * @returns a list containing 1+ decorators on the node, otherwise undefined
+ */
+export const retrieveTsDecorators = (node: ts.Node): ReadonlyArray<ts.Decorator> | undefined => {
+  return ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined;
+};
+
+/**
+ * Helper method for retrieving modifiers from a TypeScript {@link ts.Node} entity.
+ *
+ * Starting with TypeScript v4.8, decorators and modifiers have been coalesced into a single field, and retrieving
+ * modifiers directly has been deprecated. This helper function is a utility that wraps various helper functions that
+ * the TypeScript compiler exposes for pulling modifiers out of said field.
+ *
+ * @see {@link https://devblogs.microsoft.com/typescript/announcing-typescript-4-8/#decorators-are-placed-on-modifiers-on-typescripts-syntax-trees|The TypeScript 4.8 Announcement}
+ *
+ * @param node the node to pull modifiers out of
+ * @returns a list containing 1+ modifiers on the node, otherwise undefined
+ */
+export const retrieveTsModifiers = (node: ts.Node): ReadonlyArray<ts.Modifier> | undefined => {
+  return ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
+};

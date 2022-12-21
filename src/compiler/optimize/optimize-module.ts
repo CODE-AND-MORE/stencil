@@ -1,9 +1,10 @@
+import sourceMapMerge from 'merge-source-map';
+import type { CompressOptions, MangleOptions, MinifyOptions, SourceMapOptions } from 'terser';
+import ts from 'typescript';
+
+import type { CompilerCtx, Config, OptimizeJsResult, SourceMap, SourceTarget } from '../../declarations';
 import { minfyJsId } from '../../version';
 import { minifyJs } from './minify-js';
-import type { CompilerCtx, Config, OptimizeJsResult, SourceTarget, SourceMap } from '../../declarations';
-import type { CompressOptions, MangleOptions, MinifyOptions, SourceMapOptions } from 'terser';
-import sourceMapMerge from 'merge-source-map';
-import ts from 'typescript';
 
 interface OptimizeModuleOptions {
   input: string;
@@ -58,7 +59,18 @@ export const optimizeModule = async (
   if (opts.sourceTarget === 'es5' || opts.minify) {
     minifyOpts = getTerserOptions(config, opts.sourceTarget, isDebug);
     if (config.sourceMap) {
-      minifyOpts.sourceMap = { content: opts.sourceMap };
+      minifyOpts.sourceMap = {
+        content:
+          // We need to loosely check for a source map definition
+          // so we don't spread a `null`/`undefined` value into the object
+          // which results in invalid source maps during minification
+          opts.sourceMap != null
+            ? {
+                ...opts.sourceMap,
+                version: 3,
+              }
+            : undefined,
+      };
     }
 
     const compressOpts = minifyOpts.compress as CompressOptions;
@@ -205,7 +217,16 @@ export const prepareModule = async (
         (minifyOpts.sourceMap as SourceMapOptions)?.content as SourceMap,
         JSON.parse(tsResults.sourceMapText)
       );
-      minifyOpts.sourceMap = { content: mergeMap };
+
+      if (mergeMap != null) {
+        minifyOpts.sourceMap = {
+          content: {
+            ...mergeMap,
+            sources: mergeMap.sources ?? [],
+            version: 3,
+          },
+        };
+      }
     }
   }
 

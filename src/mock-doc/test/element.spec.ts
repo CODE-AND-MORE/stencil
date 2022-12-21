@@ -1,7 +1,7 @@
 import { MockDocument } from '../document';
-import { MockWindow, cloneWindow } from '../window';
-import { MockElement, MockHTMLElement } from '../node';
 import { MockAnchorElement, MockMetaElement, MockSVGElement } from '../element';
+import { MockElement, MockHTMLElement } from '../node';
+import { cloneWindow, MockWindow } from '../window';
 
 describe('element', () => {
   let doc: MockDocument;
@@ -264,7 +264,7 @@ describe('element', () => {
       expect(root.contains(root)).toEqual(true);
     });
 
-    it('returns false when a node is not the given node itself or not a descendant of the given node ', () => {
+    it('returns false when a node is not the given node itself or not a descendant of the given node', () => {
       const root = document.createElement('div');
       const span = document.createElement('span');
       expect(root.contains(span)).toEqual(false);

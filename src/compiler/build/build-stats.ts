@@ -1,4 +1,5 @@
 import { byteSize, sortBy } from '@utils';
+
 import type * as d from '../../declarations';
 import { isOutputTargetStats } from '../output-targets/output-utils';
 
@@ -78,10 +79,13 @@ export function generateBuildStats(
 /**
  * Writes the files from the stats config to the file system
  * @param config the project build configuration
- * @param buildCtx An instance of the build which holds the details about the build
- * @returns
+ * @param data the information to write out to disk (as specified by each stats output target specified in the provided
+ * config)
  */
-export async function writeBuildStats(config: d.Config, data: d.CompilerBuildStats | { diagnostics: d.Diagnostic[] }) {
+export async function writeBuildStats(
+  config: d.Config,
+  data: d.CompilerBuildStats | { diagnostics: d.Diagnostic[] }
+): Promise<void> {
   const statsTargets = config.outputTargets.filter(isOutputTargetStats);
 
   await Promise.all(

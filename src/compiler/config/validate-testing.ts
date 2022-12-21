@@ -1,13 +1,14 @@
-import type * as d from '../../declarations';
 import { buildError, isString } from '@utils';
-import { isAbsolute, join, basename, dirname } from 'path';
-import { isLocalModule } from '../sys/resolve/resolve-utils';
-import { isOutputTargetDist, isOutputTargetWww } from '../output-targets/output-utils';
+import { basename, dirname, isAbsolute, join } from 'path';
 
-export const validateTesting = (config: d.UnvalidatedConfig, diagnostics: d.Diagnostic[]) => {
+import type * as d from '../../declarations';
+import { isOutputTargetDist, isOutputTargetWww } from '../output-targets/output-utils';
+import { isLocalModule } from '../sys/resolve/resolve-utils';
+
+export const validateTesting = (config: d.ValidatedConfig, diagnostics: d.Diagnostic[]) => {
   const testing = (config.testing = Object.assign({}, config.testing || {}));
 
-  if (!config.flags || (!config.flags.e2e && !config.flags.spec)) {
+  if (!config.flags.e2e && !config.flags.spec) {
     return;
   }
 
@@ -49,7 +50,7 @@ export const validateTesting = (config: d.UnvalidatedConfig, diagnostics: d.Diag
     testing.rootDir = config.rootDir;
   }
 
-  if (config.flags && typeof config.flags.screenshotConnector === 'string') {
+  if (typeof config.flags.screenshotConnector === 'string') {
     testing.screenshotConnector = config.flags.screenshotConnector;
   }
 
@@ -73,8 +74,10 @@ export const validateTesting = (config: d.UnvalidatedConfig, diagnostics: d.Diag
     });
 
     (config.outputTargets ?? [])
-      .filter((o) => (isOutputTargetDist(o) || isOutputTargetWww(o)) && o.dir)
-      .forEach((outputTarget: d.OutputTargetWww) => {
+      .filter(
+        (o): o is d.OutputTargetWww | d.OutputTargetDist => (isOutputTargetDist(o) || isOutputTargetWww(o)) && !!o.dir
+      )
+      .forEach((outputTarget) => {
         testing.testPathIgnorePatterns?.push(outputTarget.dir!);
       });
   }

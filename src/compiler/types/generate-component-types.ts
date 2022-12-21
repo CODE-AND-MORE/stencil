@@ -1,5 +1,6 @@
+import { addDocBlock, dashToPascalCase, sortBy } from '@utils';
+
 import type * as d from '../../declarations';
-import { dashToPascalCase, sortBy } from '@utils';
 import { generateEventTypes } from './generate-event-types';
 import { generateMethodTypes } from './generate-method-types';
 import { generatePropTypes } from './generate-prop-types';
@@ -33,7 +34,11 @@ export const generateComponentTypes = (
   const jsxAttributes = attributesToMultiLineString([...propAttributes, ...eventAttributes], true, areTypesInternal);
 
   const element = [
-    `        interface ${htmlElementName} extends Components.${tagNameAsPascal}, HTMLStencilElement {`,
+    addDocBlock(
+      `        interface ${htmlElementName} extends Components.${tagNameAsPascal}, HTMLStencilElement {`,
+      cmp.docs,
+      4
+    ),
     `        }`,
     `        var ${htmlElementName}: {`,
     `                prototype: ${htmlElementName};`,
@@ -45,7 +50,7 @@ export const generateComponentTypes = (
     tagName,
     tagNameAsPascal,
     htmlElementName,
-    component: `        interface ${tagNameAsPascal} {\n${componentAttributes}        }`,
+    component: addDocBlock(`        interface ${tagNameAsPascal} {\n${componentAttributes}        }`, cmp.docs, 4),
     jsx: `    interface ${tagNameAsPascal} {\n${jsxAttributes}        }`,
     element: element.join(`\n`),
   };

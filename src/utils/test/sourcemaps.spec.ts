@@ -1,10 +1,11 @@
 import {
-  getSourceMappingUrlLinker,
-  getSourceMappingUrlForEndOfFile,
-  rollupToStencilSourceMap,
   getInlineSourceMappingUrlLinker,
+  getSourceMappingUrlForEndOfFile,
+  getSourceMappingUrlLinker,
+  rollupToStencilSourceMap,
 } from '@utils';
 import { SourceMap as RollupSourceMap } from 'rollup';
+
 import type * as d from '../../declarations';
 
 describe('sourcemaps', () => {
@@ -213,10 +214,6 @@ describe('sourcemaps', () => {
   });
 
   describe('getSourceMappingUrlLinkerWithNewline', () => {
-    it('returns a correctly formatted url', () => {
-      expect(getSourceMappingUrlForEndOfFile('some-pkg')).toBe('\n//# sourceMappingURL=some-pkg.map');
-    });
-
     it('returns a correctly formatted url', () => {
       expect(getSourceMappingUrlForEndOfFile('some-pkg')).toBe('\n//# sourceMappingURL=some-pkg.map');
     });

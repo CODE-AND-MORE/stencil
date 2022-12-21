@@ -1,10 +1,11 @@
-import type * as d from '../../../declarations';
-import { createAnonymousClassMetadataProxy } from '../add-component-meta-proxy';
-import * as TransformUtils from '../transform-utils';
-import * as FormatComponentRuntimeMeta from '../../../utils/format-component-runtime-meta';
 import ts from 'typescript';
-import { HTML_ELEMENT } from '../core-runtime-apis';
+
 import { stubComponentCompilerMeta } from '../../../compiler/types/tests/ComponentCompilerMeta.stub';
+import type * as d from '../../../declarations';
+import * as FormatComponentRuntimeMeta from '../../../utils/format-component-runtime-meta';
+import { createAnonymousClassMetadataProxy } from '../add-component-meta-proxy';
+import { HTML_ELEMENT } from '../core-runtime-apis';
+import * as TransformUtils from '../transform-utils';
 
 describe('add-component-meta-proxy', () => {
   describe('createAnonymousClassMetadataProxy()', () => {
@@ -28,11 +29,10 @@ describe('add-component-meta-proxy', () => {
 
       classExpr = ts.factory.createClassExpression(
         undefined,
-        undefined,
         'MyComponent',
         undefined,
         [htmlElementHeritageClause],
-        undefined
+        []
       );
       literalMetadata = ts.factory.createStringLiteral('MyComponent');
 

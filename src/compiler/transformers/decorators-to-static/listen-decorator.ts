@@ -1,8 +1,9 @@
-import type * as d from '../../../declarations';
 import { augmentDiagnosticWithNode, buildError, flatOne } from '@utils';
-import { convertValueToLiteral, createStaticGetter } from '../transform-utils';
-import { getDeclarationParameters, isDecoratorNamed } from './decorator-utils';
 import ts from 'typescript';
+
+import type * as d from '../../../declarations';
+import { convertValueToLiteral, createStaticGetter, retrieveTsDecorators } from '../transform-utils';
+import { getDeclarationParameters, isDecoratorNamed } from './decorator-utils';
 
 export const listenDecoratorsToStatic = (
   diagnostics: d.Diagnostic[],
@@ -19,8 +20,11 @@ export const listenDecoratorsToStatic = (
   }
 };
 
-const parseListenDecorators = (diagnostics: d.Diagnostic[], method: ts.MethodDeclaration) => {
-  const listenDecorators = method.decorators.filter(isDecoratorNamed('Listen'));
+const parseListenDecorators = (
+  diagnostics: d.Diagnostic[],
+  method: ts.MethodDeclaration
+): d.ComponentCompilerListener[] => {
+  const listenDecorators = (retrieveTsDecorators(method) ?? []).filter(isDecoratorNamed('Listen'));
   if (listenDecorators.length === 0) {
     return [];
   }

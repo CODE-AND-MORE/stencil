@@ -1,26 +1,27 @@
-import { addGlobalsToWindowPrototype } from './global';
+import { MockHeaders } from '.';
 import { createConsole } from './console';
 import { MockCustomElementRegistry } from './custom-element-registry';
-import {
-  MockEvent,
-  addEventListener,
-  dispatchEvent,
-  removeEventListener,
-  resetEventListeners,
-  MockMouseEvent,
-  MockCustomEvent,
-  MockKeyboardEvent,
-} from './event';
 import { MockDocument, resetDocument } from './document';
 import { MockDocumentFragment } from './document-fragment';
-import { MockElement, MockHTMLElement, MockNode, MockNodeList } from './node';
+import {
+  addEventListener,
+  dispatchEvent,
+  MockCustomEvent,
+  MockEvent,
+  MockFocusEvent,
+  MockKeyboardEvent,
+  MockMouseEvent,
+  removeEventListener,
+  resetEventListeners,
+} from './event';
+import { addGlobalsToWindowPrototype } from './global';
 import { MockHistory } from './history';
 import { MockIntersectionObserver } from './intersection-observer';
 import { MockLocation } from './location';
 import { MockNavigator } from './navigator';
+import { MockElement, MockHTMLElement, MockNode, MockNodeList } from './node';
 import { MockPerformance, resetPerformance } from './performance';
 import { MockStorage } from './storage';
-import { MockHeaders } from '.';
 
 const nativeClearInterval = clearInterval;
 const nativeClearTimeout = clearTimeout;
@@ -74,6 +75,7 @@ export class MockWindow {
   CustomEvent: typeof MockCustomEvent;
   Event: typeof MockEvent;
   Headers: typeof MockHeaders;
+  FocusEvent: typeof MockFocusEvent;
   KeyboardEvent: typeof MockKeyboardEvent;
   MouseEvent: typeof MockMouseEvent;
 
@@ -843,9 +845,11 @@ export function cloneDocument(srcDoc: Document) {
   return dstWin.document;
 }
 
+// TODO(STENCIL-345) - Evaluate reconciling MockWindow, Window differences
 /**
  * Constrain setTimeout() to 1ms, but still async. Also
  * only allow setInterval() to fire once, also constrained to 1ms.
+ * @param win the mock window instance to update
  */
 export function constrainTimeouts(win: any) {
   (win as MockWindow).__allowInterval = false;

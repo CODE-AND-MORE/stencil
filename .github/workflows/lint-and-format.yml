@@ -8,17 +8,17 @@ on:
 jobs:
   format:
     name: Check
-    runs-on: 'ubuntu-latest'
+    runs-on: 'ubuntu-20.04'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
 
       - name: Get Core Dependencies
         uses: ./.github/workflows/actions/get-core-dependencies
 
+      - name: ESLint
+        run: npm run lint
+
       - name: Prettier Check
         run: npm run prettier.dry-run
         shell: bash
-
-      - name: ESLint
-        run: npm run lint

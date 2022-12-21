@@ -1,7 +1,10 @@
-import type * as d from '@stencil/core/declarations';
+/* eslint-disable jest/no-test-prefixes, jest/no-commented-out-tests, jest/expect-expect -- this file needs to be brought up to date at some point */
+// TODO(STENCIL-487): Investigate reviving this test file
 import { createCompiler } from '@stencil/core/compiler';
-import { mockStencilSystem } from '@stencil/core/testing';
+import type * as d from '@stencil/core/declarations';
+import { mockCompilerSystem, mockLoadConfigInit } from '@stencil/core/testing';
 import path from 'path';
+
 import { validateConfig } from '../../config/validate-config';
 
 xdescribe('component-styles', () => {
@@ -10,7 +13,7 @@ xdescribe('component-styles', () => {
   const root = path.resolve('/');
 
   beforeEach(async () => {
-    const sys: d.CompilerSystem = mockStencilSystem() as any;
+    const sys: d.CompilerSystem = mockCompilerSystem() as any;
     await sys.writeFile(
       '/tsconfig.json',
       `
@@ -32,10 +35,13 @@ xdescribe('component-styles', () => {
     `
     );
 
-    const { config } = validateConfig({
-      rootDir: '/',
-      tsconfig: '/tsconfig.json',
-    });
+    const { config } = validateConfig(
+      {
+        rootDir: '/',
+        tsconfig: '/tsconfig.json',
+      },
+      mockLoadConfigInit()
+    );
     config.sys = sys;
     compiler = await createCompiler(config);
 

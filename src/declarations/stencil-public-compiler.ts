@@ -1,5 +1,7 @@
-import type { JsonDocs } from './stencil-public-docs';
+import type { ConfigFlags } from '../cli/config-flags';
 import type { PrerenderUrlResults } from '../internal';
+import type { JsonDocs } from './stencil-public-docs';
+
 export * from './stencil-public-docs';
 
 /**
@@ -394,6 +396,30 @@ type Loose<T extends Object> = Record<string, any> & Partial<T>;
  */
 export type UnvalidatedConfig = Loose<Config>;
 
+/**
+ * Helper type to strip optional markers from keys in a type, while preserving other type information for the key.
+ * This type takes a union of keys, K, in type T to allow for the type T to be gradually updated.
+ *
+ * ```typescript
+ * type Foo { bar?: number, baz?: string }
+ * type ReqFieldFoo = RequireFields<Foo, 'bar'>; // { bar: number, baz?: string }
+ * ```
+ */
+type RequireFields<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+/**
+ * Fields in {@link Config} to make required for {@link ValidatedConfig}
+ */
+type StrictConfigFields = 'flags' | 'logger' | 'outputTargets' | 'rootDir' | 'sys' | 'testing';
+
+/**
+ * A version of {@link Config} that makes certain fields required. This type represents a valid configuration entity.
+ * When a configuration is received by the user, it is a bag of unverified data. In order to make stricter guarantees
+ * about the data from a type-safety perspective, this type is intended to be used throughout the codebase once
+ * validations have occurred at runtime.
+ */
+export type ValidatedConfig = RequireFields<Config, StrictConfigFields>;
+
 export interface HydratedFlag {
   /**
    * Defaults to `hydrated`.
@@ -528,6 +554,10 @@ export interface StencilDevServerConfig {
 export interface DevServerConfig extends StencilDevServerConfig {
   browserUrl?: string;
   devServerDir?: string;
+  /**
+   * A list of glob patterns like `subdir/*.js`  to exclude from hot-module
+   * reloading updates.
+   */
   excludeHmr?: string[];
   historyApiFallback?: HistoryApiFallback;
   openBrowser?: boolean;
@@ -546,51 +576,6 @@ export interface DevServerEditor {
   name?: string;
   supported?: boolean;
   priority?: number;
-}
-
-export interface ConfigFlags {
-  task?: TaskCommand;
-  args?: string[];
-  knownArgs?: string[];
-  unknownArgs?: string[];
-  address?: string;
-  build?: boolean;
-  cache?: boolean;
-  checkVersion?: boolean;
-  ci?: boolean;
-  compare?: boolean;
-  config?: string;
-  debug?: boolean;
-  dev?: boolean;
-  docs?: boolean;
-  docsApi?: string;
-  docsJson?: string;
-  e2e?: boolean;
-  emulate?: string;
-  es5?: boolean;
-  headless?: boolean;
-  help?: boolean;
-  log?: boolean;
-  logLevel?: string;
-  verbose?: boolean;
-  maxWorkers?: number;
-  open?: boolean;
-  port?: number;
-  prerender?: boolean;
-  prod?: boolean;
-  profile?: boolean;
-  root?: string;
-  screenshot?: boolean;
-  screenshotConnector?: string;
-  serve?: boolean;
-  serviceWorker?: boolean;
-  spec?: boolean;
-  ssr?: boolean;
-  stats?: boolean;
-  updateScreenshot?: boolean;
-  version?: boolean;
-  watch?: boolean;
-  devtools?: boolean;
 }
 
 export type TaskCommand =
@@ -1217,6 +1202,7 @@ export interface BuildOnEvents {
 }
 
 export interface BuildEmitEvents {
+  emit(eventName: CompilerEventName, path: string): void;
   emit(eventName: CompilerEventFileAdd, path: string): void;
   emit(eventName: CompilerEventFileDelete, path: string): void;
   emit(eventName: CompilerEventFileUpdate, path: string): void;
@@ -1792,7 +1778,30 @@ export interface EmulateViewport {
   isLandscape?: boolean;
 }
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | string;
+/**
+ * This sets the log level hierarchy for our terminal logger, ranging from
+ * most to least verbose.
+ *
+ * Ordering the levels like this lets us easily check whether we should log a
+ * message at a given time. For instance, if the log level is set to `'warn'`,
+ * then anything passed to the logger with level `'warn'` or `'error'` should
+ * be logged, but we should _not_ log anything with level `'info'` or `'debug'`.
+ *
+ * If we have a current log level `currentLevel` and a message with level
+ * `msgLevel` is passed to the logger, we can determine whether or not we should
+ * log it by checking if the log level on the message is further up or at the
+ * same level in the hierarchy than `currentLevel`, like so:
+ *
+ * ```ts
+ * LOG_LEVELS.indexOf(msgLevel) >= LOG_LEVELS.indexOf(currentLevel)
+ * ```
+ *
+ * NOTE: for the reasons described above, do not change the order of the entries
+ * in this array without good reason!
+ */
+export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
+
+export type LogLevel = typeof LOG_LEVELS[number];
 
 /**
  * Common logger to be used by the compiler, dev-server and CLI. The CLI will use a
@@ -1842,6 +1851,28 @@ export interface OutputTargetDist extends OutputTargetBase {
   dir?: string;
 
   collectionDir?: string | null;
+  /**
+   * When `true` this flag will transform aliased import paths defined in
+   * a project's `tsconfig.json` to relative import paths in the compiled output's
+   * `dist-collection` bundle if it is generated (i.e. `collectionDir` is set).
+   *
+   * Paths will be left in aliased format if `false` or `undefined`.
+   *
+   * @example
+   * // tsconfig.json
+   * {
+   *   paths: {
+   *     "@utils/*": ['/src/utils/*']
+   *   }
+   * }
+   *
+   * // Source file
+   * import * as dateUtils from '@utils/date-utils';
+   * // Output file
+   * import * as dateUtils from '../utils/date-utils';
+   */
+  transformAliasedImportPathsInCollection?: boolean | null;
+
   typesDir?: string;
   esmLoaderPath?: string;
   copy?: CopyTask[];
@@ -1855,6 +1886,26 @@ export interface OutputTargetDistCollection extends OutputTargetBase {
   empty?: boolean;
   dir: string;
   collectionDir: string;
+  /**
+   * When `true` this flag will transform aliased import paths defined in
+   * a project's `tsconfig.json` to relative import paths in the compiled output.
+   *
+   * Paths will be left in aliased format if `false` or `undefined`.
+   *
+   * @example
+   * // tsconfig.json
+   * {
+   *   paths: {
+   *     "@utils/*": ['/src/utils/*']
+   *   }
+   * }
+   *
+   * // Source file
+   * import * as dateUtils from '@utils/date-utils';
+   * // Output file
+   * import * as dateUtils from '../utils/date-utils';
+   */
+  transformAliasedImportPaths?: boolean | null;
 }
 
 export interface OutputTargetDistTypes extends OutputTargetBase {
@@ -1976,6 +2027,12 @@ export interface OutputTargetBaseNext {
 export interface OutputTargetDistCustomElements extends OutputTargetBaseNext {
   type: 'dist-custom-elements';
   empty?: boolean;
+  /**
+   * Triggers the following behaviors when enabled:
+   * 1. All `@stencil/core/*` module references are treated as external during bundling.
+   * 2. File names are not hashed.
+   * 3. File minification will follow the behavior defined at the root of the Stencil config.
+   */
   externalRuntime?: boolean;
   copy?: CopyTask[];
   inlineDynamicImports?: boolean;
@@ -2193,7 +2250,7 @@ export interface LoadConfigInit {
  * operations around the codebase.
  */
 export interface LoadConfigResults {
-  config: UnvalidatedConfig;
+  config: ValidatedConfig;
   diagnostics: Diagnostic[];
   tsconfig: {
     path: string;
@@ -2269,15 +2326,34 @@ export interface PrerenderResults {
   average: number;
 }
 
+/**
+ * Input for CSS optimization functions, including the input CSS
+ * string and a few boolean options which turn on or off various
+ * optimizations.
+ */
 export interface OptimizeCssInput {
   input: string;
   filePath?: string;
-  autoprefixer?: any;
+  autoprefixer?: boolean | null | AutoprefixerOptions;
   minify?: boolean;
   sourceMap?: boolean;
   resolveUrl?: (url: string) => Promise<string> | string;
 }
 
+/**
+ * This is not a real interface describing the options which can
+ * be passed to autoprefixer, for that see the docs, here:
+ * https://github.com/postcss/autoprefixer#options
+ *
+ * Instead, this basically just serves as a label type to track
+ * that arguments are being passed consistently.
+ */
+export type AutoprefixerOptions = Object;
+
+/**
+ * Output from CSS optimization functions, wrapping up optimized
+ * CSS and any diagnostics produced during optimization.
+ */
 export interface OptimizeCssOutput {
   output: string;
   diagnostics: Diagnostic[];
@@ -2342,14 +2418,6 @@ export interface FsStats {
   mtime: Date;
   ctime: Date;
   birthtime: Date;
-}
-
-export interface FsWriteOptions {
-  inMemoryOnly?: boolean;
-  clearFileCache?: boolean;
-  immediateWrite?: boolean;
-  useCache?: boolean;
-  outputTargetType?: string;
 }
 
 export interface Compiler {

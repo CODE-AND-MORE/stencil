@@ -1,15 +1,16 @@
-import type {
-  Config,
-  OutputTarget,
-  OutputTargetDistCustomElements,
-  OutputTargetDistTypes,
-  OutputTargetCopy,
-} from '../../../declarations';
-import { getAbsolutePath } from '../config-utils';
-import { COPY, DIST_TYPES, isOutputTargetDist, isOutputTargetDistCustomElements } from '../../output-targets/output-utils';
-import { validateCopy } from '../validate-copy';
 import { isBoolean } from '@utils';
 import { join } from 'path';
+
+import type {
+  OutputTarget,
+  OutputTargetCopy,
+  OutputTargetDistCustomElements,
+  OutputTargetDistTypes,
+  ValidatedConfig,
+} from '../../../declarations';
+import { COPY, DIST_TYPES, isOutputTargetDist, isOutputTargetDistCustomElements } from '../../output-targets/output-utils';
+import { getAbsolutePath } from '../config-utils';
+import { validateCopy } from '../validate-copy';
 
 /**
  * Validate one or more `dist-custom-elements` output targets. Validation of an output target may involve back-filling
@@ -20,7 +21,7 @@ import { join } from 'path';
  * @returns the validated output target(s)
  */
 export const validateCustomElement = (
-  config: Config,
+  config: ValidatedConfig,
   userOutputs: ReadonlyArray<OutputTarget>
 ): ReadonlyArray<OutputTargetDistCustomElements | OutputTargetDistTypes | OutputTargetCopy> => {
   const defaultDir = 'dist';

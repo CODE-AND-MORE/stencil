@@ -1,18 +1,21 @@
-import type * as d from '../../../declarations';
 import { augmentDiagnosticWithNode, buildError, buildWarn } from '@utils';
+import ts from 'typescript';
+
+import type * as d from '../../../declarations';
+import { validatePublicName } from '../reserved-public-members';
 import {
   convertValueToLiteral,
   createStaticGetter,
   getAttributeTypeInfo,
   isMemberPrivate,
   mapJSDocTagInfo,
+  retrieveTsDecorators,
+  retrieveTsModifiers,
   serializeSymbol,
   typeToString,
   validateReferences,
 } from '../transform-utils';
 import { isDecoratorNamed } from './decorator-utils';
-import { validatePublicName } from '../reserved-public-members';
-import ts from 'typescript';
 
 export const methodDecoratorsToStatic = (
   config: d.Config,
@@ -29,7 +32,7 @@ export const methodDecoratorsToStatic = (
     .filter((method) => !!method);
 
   if (methods.length > 0) {
-    newMembers.push(createStaticGetter('methods', ts.createObjectLiteral(methods, true)));
+    newMembers.push(createStaticGetter('methods', ts.factory.createObjectLiteralExpression(methods, true)));
   }
 };
 
@@ -39,8 +42,8 @@ const parseMethodDecorator = (
   tsSourceFile: ts.SourceFile,
   typeChecker: ts.TypeChecker,
   method: ts.MethodDeclaration
-) => {
-  const methodDecorator = method.decorators.find(isDecoratorNamed('Method'));
+): ts.PropertyAssignment | null => {
+  const methodDecorator = retrieveTsDecorators(method)?.find(isDecoratorNamed('Method'));
   if (methodDecorator == null) {
     return null;
   }
@@ -78,7 +81,7 @@ const parseMethodDecorator = (
     const err = buildError(diagnostics);
     err.messageText =
       'Methods decorated with the @Method() decorator cannot be "private" nor "protected". More info: https://stenciljs.com/docs/methods';
-    augmentDiagnosticWithNode(err, method.modifiers[0]);
+    augmentDiagnosticWithNode(err, retrieveTsModifiers(method)![0]);
   }
 
   // Validate if the method name does not conflict with existing public names
@@ -101,7 +104,10 @@ const parseMethodDecorator = (
   };
   validateReferences(diagnostics, methodMeta.complexType.references, method.type || method.name);
 
-  const staticProp = ts.createPropertyAssignment(ts.createLiteral(methodName), convertValueToLiteral(methodMeta));
+  const staticProp = ts.factory.createPropertyAssignment(
+    ts.factory.createStringLiteral(methodName),
+    convertValueToLiteral(methodMeta)
+  );
 
   return staticProp;
 };

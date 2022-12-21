@@ -3,6 +3,7 @@ module.exports = {
   moduleNameMapper: {
     '@app-data': '<rootDir>/internal/app-data/index.cjs',
     '@app-globals': '<rootDir>/internal/app-globals/index.cjs',
+    '@compiler-deps': '<rootDir>/src/compiler/sys/modules/compiler-deps.ts',
     '@platform': '<rootDir>/internal/testing/index.js',
     '@runtime': '<rootDir>/internal/testing/index.js',
     '@stencil/core/cli': '<rootDir>/cli/index.js',
@@ -57,5 +58,5 @@ module.exports = {
   testRegex: '/(src|scripts)/.*\\.spec\\.(ts|tsx|js)$',
   // TODO(STENCIL-307): Move away from Jasmine runner for internal Stencil tests, which involves re-working environment
   // setup
-  testRunner: 'jest-jasmine2'
+  testRunner: 'jest-jasmine2',
 };

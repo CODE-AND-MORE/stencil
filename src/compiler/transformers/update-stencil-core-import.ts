@@ -1,4 +1,5 @@
 import ts from 'typescript';
+
 import { STENCIL_CORE_ID } from '../bundle/entry-alias-ids';
 
 export const updateStencilCoreImports = (updatedCoreImportPath: string): ts.TransformerFactory<ts.SourceFile> => {
@@ -28,7 +29,6 @@ export const updateStencilCoreImports = (updatedCoreImportPath: string): ts.Tran
                   const newImport = ts.factory.updateImportDeclaration(
                     s,
                     undefined,
-                    undefined,
                     ts.factory.createImportClause(
                       false,
                       undefined,
@@ -53,7 +53,7 @@ export const updateStencilCoreImports = (updatedCoreImportPath: string): ts.Tran
       });
 
       if (madeChanges) {
-        return ts.updateSourceFileNode(
+        return ts.factory.updateSourceFile(
           tsSourceFile,
           newStatements,
           tsSourceFile.isDeclarationFile,
@@ -69,6 +69,9 @@ export const updateStencilCoreImports = (updatedCoreImportPath: string): ts.Tran
   };
 };
 
+/**
+ * A set of imports which we don't want to remove from an output file
+ */
 const KEEP_IMPORTS = new Set([
   'h',
   'setMode',

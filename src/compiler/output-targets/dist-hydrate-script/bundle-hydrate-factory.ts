@@ -1,15 +1,16 @@
+import { loadRollupDiagnostics } from '@utils';
+
 import type * as d from '../../../declarations';
 import type { BundleOptions } from '../../bundle/bundle-interface';
 import { bundleOutput } from '../../bundle/bundle-output';
-import { getHydrateBuildConditionals } from './hydrate-build-conditionals';
-import { hydrateComponentTransform } from '../../transformers/component-hydrate/tranform-to-hydrate-component';
-import { loadRollupDiagnostics } from '@utils';
-import { removeCollectionImports } from '../../transformers/remove-collection-imports';
 import { STENCIL_INTERNAL_HYDRATE_ID } from '../../bundle/entry-alias-ids';
+import { hydrateComponentTransform } from '../../transformers/component-hydrate/tranform-to-hydrate-component';
+import { removeCollectionImports } from '../../transformers/remove-collection-imports';
 import { updateStencilCoreImports } from '../../transformers/update-stencil-core-import';
+import { getHydrateBuildConditionals } from './hydrate-build-conditionals';
 
 export const bundleHydrateFactory = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   _build: d.BuildConditionals,
@@ -42,7 +43,7 @@ export const bundleHydrateFactory = async (
   return undefined;
 };
 
-const getHydrateCustomTransformer = (config: d.Config, compilerCtx: d.CompilerCtx) => {
+const getHydrateCustomTransformer = (config: d.ValidatedConfig, compilerCtx: d.CompilerCtx) => {
   const transformOpts: d.TransformOptions = {
     coreImportPath: STENCIL_INTERNAL_HYDRATE_ID,
     componentExport: null,

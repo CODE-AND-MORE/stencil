@@ -1,12 +1,13 @@
+import { addDocBlock, normalizePath } from '@utils';
+import { isAbsolute, relative, resolve } from 'path';
+
 import type * as d from '../../declarations';
-import { COMPONENTS_DTS_HEADER, sortImportNames } from './types-utils';
+import { GENERATED_DTS, getComponentsDtsSrcFilePath } from '../output-targets/output-utils';
 import { generateComponentTypes } from './generate-component-types';
 import { generateEventDetailTypes } from './generate-event-detail-types';
-import { GENERATED_DTS, getComponentsDtsSrcFilePath } from '../output-targets/output-utils';
-import { isAbsolute, relative, resolve } from 'path';
-import { normalizePath } from '@utils';
-import { updateReferenceTypeImports } from './update-import-refs';
 import { updateStencilTypesImports } from './stencil-types';
+import { COMPONENTS_DTS_HEADER, sortImportNames } from './types-utils';
+import { updateReferenceTypeImports } from './update-import-refs';
 
 /**
  * Generates and writes a `components.d.ts` file to disk. This file may be written to the `src` directory of a project,
@@ -132,7 +133,12 @@ const generateComponentTypesFile = (config: d.Config, buildCtx: d.BuildCtx, areT
   c.push(`}`);
 
   c.push(`declare namespace LocalJSX {`);
-  c.push(...modules.map((m) => `  ${m.jsx}`));
+  c.push(
+    ...modules.map((m) => {
+      const docs = components.find((c) => c.tagName === m.tagName).docs;
+      return addDocBlock(`  ${m.jsx}`, docs, 4);
+    })
+  );
 
   c.push(`        interface IntrinsicElements {`);
   c.push(...modules.map((m) => `              "${m.tagName}": ${m.tagNameAsPascal};`));
@@ -146,10 +152,15 @@ const generateComponentTypesFile = (config: d.Config, buildCtx: d.BuildCtx, areT
   c.push(`        export namespace JSX {`);
   c.push(`                interface IntrinsicElements {`);
   c.push(
-    ...modules.map(
-      (m) =>
-        `                        "${m.tagName}": LocalJSX.${m.tagNameAsPascal} & JSXBase.HTMLAttributes<${m.htmlElementName}>;`
-    )
+    ...modules.map((m) => {
+      const docs = components.find((c) => c.tagName === m.tagName).docs;
+
+      return addDocBlock(
+        `                        "${m.tagName}": LocalJSX.${m.tagNameAsPascal} & JSXBase.HTMLAttributes<${m.htmlElementName}>;`,
+        docs,
+        12
+      );
+    })
   );
   c.push(`                }`);
   c.push(`        }`);

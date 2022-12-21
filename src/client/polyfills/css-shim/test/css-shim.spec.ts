@@ -1,7 +1,13 @@
-import { CustomStyle } from '../custom-style';
 import { mockWindow } from '@stencil/core/testing';
 
+import { CustomStyle } from '../custom-style';
+
 describe('css-shim', () => {
+  beforeEach(() => {
+    window = mockWindow();
+    document = window.document;
+  });
+
   it('should set value in second addCustomStyle with async tick', async () => {
     const customStyle = new CustomStyle(window, document);
 
@@ -378,9 +384,4 @@ describe('css-shim', () => {
   function css(c: string) {
     return c.replace(/\s/g, '').toLowerCase();
   }
-
-  beforeEach(() => {
-    window = mockWindow();
-    document = window.document;
-  });
 });

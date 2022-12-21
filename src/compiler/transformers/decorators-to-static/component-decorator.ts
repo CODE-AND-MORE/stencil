@@ -1,9 +1,10 @@
-import type * as d from '../../../declarations';
-import { augmentDiagnosticWithNode, buildError, validateComponentTag, isString, buildWarn } from '@utils';
-import { getDeclarationParameters } from './decorator-utils';
-import { convertValueToLiteral, createStaticGetter } from '../transform-utils';
-import { styleToStatic } from './style-to-static';
+import { augmentDiagnosticWithNode, buildError, buildWarn, isString, validateComponentTag } from '@utils';
 import ts from 'typescript';
+
+import type * as d from '../../../declarations';
+import { convertValueToLiteral, createStaticGetter, retrieveTsDecorators } from '../transform-utils';
+import { getDeclarationParameters } from './decorator-utils';
+import { styleToStatic } from './style-to-static';
 
 export const componentDecoratorToStatic = (
   config: d.Config,
@@ -87,7 +88,7 @@ const validateComponent = (
   }
 
   // check if class has more than one decorator
-  const otherDecorator = cmpNode.decorators && cmpNode.decorators.find((d) => d !== componentDecorator);
+  const otherDecorator = retrieveTsDecorators(cmpNode)?.find((d) => d !== componentDecorator);
   if (otherDecorator) {
     const err = buildError(diagnostics);
     err.messageText = `Classes decorated with @Component can not be decorated with more decorators.

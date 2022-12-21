@@ -1,18 +1,19 @@
-import type * as d from '../../../declarations';
-import { writeLazyModule } from './write-lazy-entry-module';
 import {
   formatComponentRuntimeMeta,
-  stringifyRuntimeData,
+  getSourceMappingUrlForEndOfFile,
   hasDependency,
   rollupToStencilSourceMap,
-  getSourceMappingUrlForEndOfFile,
+  stringifyRuntimeData,
 } from '@utils';
-import { optimizeModule } from '../../optimize/optimize-module';
 import { join } from 'path';
 import type { SourceMap as RollupSourceMap } from 'rollup';
 
+import type * as d from '../../../declarations';
+import { optimizeModule } from '../../optimize/optimize-module';
+import { writeLazyModule } from './write-lazy-entry-module';
+
 export const generateLazyModules = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   outputTargetType: string,
@@ -26,7 +27,7 @@ export const generateLazyModules = async (
     return [];
   }
   const shouldMinify = config.minifyJs && isBrowserBuild;
-  const rollupResults = results.filter((r) => r.type === 'chunk') as d.RollupChunkResult[];
+  const rollupResults = results.filter((r): r is d.RollupChunkResult => r.type === 'chunk');
   const entryComponentsResults = rollupResults.filter((rollupResult) => rollupResult.isComponent);
   const chunkResults = rollupResults.filter((rollupResult) => !rollupResult.isComponent && !rollupResult.isEntry);
 
@@ -88,7 +89,7 @@ export const generateLazyModules = async (
 
   await Promise.all(
     results
-      .filter((r) => r.type === 'asset')
+      .filter((r): r is d.RollupAssetResult => r.type === 'asset')
       .map((r: d.RollupAssetResult) => {
         return Promise.all(
           destinations.map((dest) => {
@@ -180,7 +181,7 @@ const generateCaseClauseCjs = (bundleId: string): string => {
 };
 
 const generateLazyEntryModule = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   rollupResult: d.RollupChunkResult,
@@ -227,7 +228,7 @@ const generateLazyEntryModule = async (
 };
 
 const writeLazyChunk = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   rollupResult: d.RollupChunkResult,
@@ -263,7 +264,7 @@ const writeLazyChunk = async (
 };
 
 const writeLazyEntry = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   rollupResult: d.RollupChunkResult,
@@ -398,7 +399,7 @@ export const sortBundleComponents = (a: d.ComponentCompilerMeta, b: d.ComponentC
 };
 
 const convertChunk = async (
-  config: d.Config,
+  config: d.ValidatedConfig,
   compilerCtx: d.CompilerCtx,
   buildCtx: d.BuildCtx,
   sourceTarget: d.SourceTarget,

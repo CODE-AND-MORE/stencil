@@ -1,5 +1,7 @@
+import { isBoolean, isString } from '@utils';
+import { isAbsolute, join, resolve } from 'path';
+
 import type * as d from '../../../declarations';
-import { getAbsolutePath } from '../config-utils';
 import {
   COPY,
   DIST_COLLECTION,
@@ -10,8 +12,7 @@ import {
   getComponentsDtsTypesFilePath,
   isOutputTargetDist,
 } from '../../output-targets/output-utils';
-import { isAbsolute, join, resolve } from 'path';
-import { isBoolean, isString } from '@utils';
+import { getAbsolutePath } from '../config-utils';
 import { validateCopy } from '../validate-copy';
 
 /**
@@ -23,7 +24,7 @@ import { validateCopy } from '../validate-copy';
  * @param userOutputs a user-supplied list of output targets.
  * @returns a list of OutputTargets which have been validated for us.
  */
-export const validateDist = (config: d.Config, userOutputs: d.OutputTarget[]): d.OutputTarget[] => {
+export const validateDist = (config: d.ValidatedConfig, userOutputs: d.OutputTarget[]): d.OutputTarget[] => {
   const distOutputTargets = userOutputs.filter(isOutputTargetDist);
   return distOutputTargets.reduce((outputs: d.OutputTarget[], o: d.OutputTargetDist) => {
     const distOutputTarget = validateOutputTargetDist(config, o);
@@ -67,6 +68,7 @@ export const validateDist = (config: d.Config, userOutputs: d.OutputTarget[]): d
           dir: distOutputTarget.dir,
           collectionDir: distOutputTarget.collectionDir,
           empty: distOutputTarget.empty,
+          transformAliasedImportPaths: distOutputTarget.transformAliasedImportPathsInCollection,
         });
         outputs.push({
           type: COPY,
@@ -121,7 +123,7 @@ export const validateDist = (config: d.Config, userOutputs: d.OutputTarget[]): d
  * @returns `Required<d.OutputTargetDist>`, i.e. `d.OutputTargetDist` with all
  * optional properties rendered un-optional.
  */
-const validateOutputTargetDist = (config: d.Config, o: d.OutputTargetDist): Required<d.OutputTargetDist> => {
+const validateOutputTargetDist = (config: d.ValidatedConfig, o: d.OutputTargetDist): Required<d.OutputTargetDist> => {
   // we need to create an object with a bunch of default values here so that
   // the typescript compiler can infer their types correctly
   const outputTarget = {
@@ -134,6 +136,7 @@ const validateOutputTargetDist = (config: d.Config, o: d.OutputTargetDist): Requ
     copy: validateCopy(o.copy ?? [], []),
     polyfills: isBoolean(o.polyfills) ? o.polyfills : undefined,
     empty: isBoolean(o.empty) ? o.empty : true,
+    transformAliasedImportPathsInCollection: o.transformAliasedImportPathsInCollection ?? false,
   };
 
   if (!isAbsolute(outputTarget.buildDir)) {

@@ -1,5 +1,5 @@
-import type * as d from '@stencil/core/internal';
 import type { Config } from '@jest/types';
+import type * as d from '@stencil/core/internal';
 import { isString } from '@utils';
 
 // TODO(STENCIL-306): Remove support for earlier versions of Jest
@@ -43,18 +43,30 @@ function getLegacyJestOptions(): Record<string, boolean | number | string> {
  * @param config the Stencil config to use while generating Jest CLI arguments
  * @returns the arguments to pass to the Jest CLI, wrapped in an object
  */
-export function buildJestArgv(config: d.Config): Config.Argv {
+export function buildJestArgv(config: d.ValidatedConfig): Config.Argv {
   const yargs = require('yargs');
 
-  const args = [...config.flags.unknownArgs.slice(), ...config.flags.knownArgs.slice()];
+  const knownArgs = config.flags.knownArgs.slice();
 
-  if (!args.some((a) => a.startsWith('--max-workers') || a.startsWith('--maxWorkers'))) {
-    args.push(`--max-workers=${config.maxConcurrentWorkers}`);
+  if (!knownArgs.some((a) => a.startsWith('--max-workers') || a.startsWith('--maxWorkers'))) {
+    knownArgs.push(`--max-workers=${config.maxConcurrentWorkers}`);
   }
 
   if (config.flags.devtools) {
-    args.push('--runInBand');
+    knownArgs.push('--runInBand');
   }
+
+  // we combine the modified args and the unknown args here and declare the
+  // result read only, providing some typesystem-level assurance that we won't
+  // mutate it after this point.
+  //
+  // We want that assurance because Jest likes to have any filepath match
+  // patterns at the end of the args it receives. Those args are going to be
+  // found in our `unknownArgs`, so while we want to do some stuff in this
+  // function that adds to `knownArgs` we need a guarantee that all of the
+  // `unknownArgs` are _after_ all the `knownArgs` in the array we end up
+  // generating the Jest configuration from.
+  const args: ReadonlyArray<string> = [...knownArgs, ...config.flags.unknownArgs];
 
   config.logger.info(config.logger.magenta(`jest args: ${args.join(' ')}`));
 
@@ -81,7 +93,7 @@ export function buildJestArgv(config: d.Config): Config.Argv {
  * @param config the Stencil config to use while generating Jest CLI arguments
  * @returns the Jest Config to attach to the `argv` argument
  */
-export function buildJestConfig(config: d.Config): string {
+export function buildJestConfig(config: d.ValidatedConfig): string {
   const stencilConfigTesting = config.testing;
   const jestDefaults: Config.DefaultOptions = require('jest-config').defaults;
 
