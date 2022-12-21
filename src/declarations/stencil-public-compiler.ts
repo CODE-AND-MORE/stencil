@@ -1915,7 +1915,7 @@ export interface OutputTargetCustom extends OutputTargetBase {
   type: 'custom';
   name: string;
   validate?: (config: Config, diagnostics: Diagnostic[]) => void;
-  generator: (config: Config, compilerCtx: any, buildCtx: any, docs: any) => Promise<void>;
+  generator: (config: Config, compilerCtx: any, buildCtx: any) => Promise<void>;
   copy?: CopyTask[];
 }
 

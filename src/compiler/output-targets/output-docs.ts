@@ -11,7 +11,6 @@ import {
   isOutputTargetDocsReadme,
   isOutputTargetDocsVscode,
 } from './output-utils';
-import { outputCustom } from './output-custom';
 
 export const outputDocs = async (config: d.Config, compilerCtx: d.CompilerCtx, buildCtx: d.BuildCtx) => {
   if (!config.buildDocs) {
@@ -39,7 +38,6 @@ export const outputDocs = async (config: d.Config, compilerCtx: d.CompilerCtx, b
     generateReadmeDocs(config, compilerCtx, docsData, docsOutputTargets),
     generateJsonDocs(config, compilerCtx, docsData, docsOutputTargets),
     generateVscodeDocs(compilerCtx, docsData, docsOutputTargets),
-    generateCustomDocs(config, docsData, docsOutputTargets),
-    outputCustom(config, compilerCtx, buildCtx, docsData, docsOutputTargets),
+    generateCustomDocs(config, docsData, docsOutputTargets)
   ]);
 };

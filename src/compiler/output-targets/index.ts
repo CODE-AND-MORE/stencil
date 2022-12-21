@@ -11,6 +11,7 @@ import { outputWww } from './output-www';
 import { outputCollection } from './dist-collection';
 import { outputTypes } from './output-types';
 import type { RollupCache } from 'rollup';
+import {outputCustom} from './output-custom';
 
 export const generateOutputTargets = async (config: d.Config, compilerCtx: d.CompilerCtx, buildCtx: d.BuildCtx) => {
   const timeSpan = buildCtx.createTimeSpan('generate outputs started', true);
@@ -33,6 +34,7 @@ export const generateOutputTargets = async (config: d.Config, compilerCtx: d.Com
     outputLazyLoader(config, compilerCtx),
     outputLazy(config, compilerCtx, buildCtx),
     outputWww(config, compilerCtx, buildCtx),
+    outputCustom(config, compilerCtx, buildCtx)
   ]);
 
   // must run after all the other outputs

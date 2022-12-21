@@ -6,7 +6,7 @@ import type {
   OutputTargetCopy,
 } from '../../../declarations';
 import { getAbsolutePath } from '../config-utils';
-import { COPY, DIST_TYPES, isOutputTargetDistCustomElements } from '../../output-targets/output-utils';
+import { COPY, DIST_TYPES, isOutputTargetDist, isOutputTargetDistCustomElements } from '../../output-targets/output-utils';
 import { validateCopy } from '../validate-copy';
 import { isBoolean } from '@utils';
 import { join } from 'path';

@@ -5,11 +5,9 @@ import { isOutputTargetCustom } from './output-utils';
 export const outputCustom = async (
   config: d.Config,
   compilerCtx: d.CompilerCtx,
-  buildCtx: d.BuildCtx,
-  docs: d.JsonDocs,
-  outputTargets: d.OutputTarget[]
+  buildCtx: d.BuildCtx
 ) => {
-  const customOutputTargets = outputTargets.filter(isOutputTargetCustom);
+  const customOutputTargets = config.outputTargets.filter(isOutputTargetCustom);
   if (customOutputTargets.length === 0) {
     return;
   }
@@ -18,7 +16,7 @@ export const outputCustom = async (
     customOutputTargets.map(async (o) => {
       const timespan = buildCtx.createTimeSpan(`generating ${o.name} started`);
       try {
-        await o.generator(config, compilerCtx, buildCtx, docs);
+        await o.generator(config, compilerCtx, buildCtx);
       } catch (e: any) {
         catchError(buildCtx.diagnostics, e);
       }
