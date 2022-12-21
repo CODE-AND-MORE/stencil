@@ -324,14 +324,17 @@ export const createInMemoryFs = (sys: d.CompilerSystem) => {
           item.isFile = true;
           item.isDirectory = false;
           item.size = stat.size;
+          item.mtimeMs = stat.mtimeMs;
         } else if (stat.isDirectory) {
           item.isFile = false;
           item.isDirectory = true;
           item.size = stat.size;
+          item.mtimeMs = stat.mtimeMs;
         } else {
           item.isFile = false;
           item.isDirectory = false;
           item.size = null;
+          item.mtimeMs = stat.mtimeMs;
         }
       } else {
         item.exists = false;
@@ -343,6 +346,7 @@ export const createInMemoryFs = (sys: d.CompilerSystem) => {
       isFile: !!item.isFile,
       isDirectory: !!item.isDirectory,
       size: typeof item.size === 'number' ? item.size : 0,
+      mtimeMs: item.mtimeMs
     };
   };
 
@@ -362,14 +366,17 @@ export const createInMemoryFs = (sys: d.CompilerSystem) => {
           item.isFile = true;
           item.isDirectory = false;
           item.size = stat.size;
+          item.mtimeMs = stat.mtimeMs;
         } else if (stat.isDirectory) {
           item.isFile = false;
           item.isDirectory = true;
           item.size = stat.size;
+          item.mtimeMs = stat.mtimeMs;
         } else {
           item.isFile = false;
           item.isDirectory = false;
           item.size = null;
+          item.mtimeMs = stat.mtimeMs;
         }
       } else {
         item.exists = false;
@@ -380,6 +387,8 @@ export const createInMemoryFs = (sys: d.CompilerSystem) => {
       exists: !!item.exists,
       isFile: !!item.isFile,
       isDirectory: !!item.isDirectory,
+      mtimeMs: item.mtimeMs,
+      size: item.size
     };
   };
 
@@ -408,6 +417,7 @@ export const createInMemoryFs = (sys: d.CompilerSystem) => {
     item.isFile = true;
     item.isDirectory = false;
     item.queueDeleteFromDisk = false;
+    item.mtimeMs = Date.now();
 
     if (typeof item.fileText === 'string') {
       // compare strings but replace Windows CR to rule out any
