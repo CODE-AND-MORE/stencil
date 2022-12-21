@@ -4,7 +4,6 @@ import { generateDocData } from '../docs/generate-doc-data';
 import { generateJsonDocs } from '../docs/json';
 import { generateReadmeDocs } from '../docs/readme';
 import { generateVscodeDocs } from '../docs/vscode';
-import { outputCustom } from './output-custom';
 import {
   isOutputTargetCustom,
   isOutputTargetDocsCustom,
