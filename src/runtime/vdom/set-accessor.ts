@@ -24,7 +24,6 @@ export const setAccessor = (
   if (oldValue !== newValue) {
     let isProp = isMemberInElement(elm, memberName);
     let ln = memberName.toLowerCase();
-
     if (BUILD.vdomClass && memberName === 'class') {
       const classList = elm.classList;
       const oldClasses = parseClassList(oldValue);
@@ -63,7 +62,7 @@ export const setAccessor = (
       }
     } else if (
       BUILD.vdomListener &&
-      (BUILD.lazyLoad ? !isProp : !(elm as any).__lookupSetter__(memberName)) &&
+      (BUILD.lazyLoad && Object.getPrototypeOf(elm).componentOnReady ? !isProp : !(elm as any).__lookupSetter__(memberName)) &&
       memberName[0] === 'o' &&
       memberName[1] === 'n'
     ) {
